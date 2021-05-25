@@ -75,6 +75,9 @@ def filter_line(line, language):
 
 
 def append_to_file(tgt_fname, line):
+    if not line:
+        return
+
     with open(tgt_fname, 'a') as f:
         f.write(line + '\n')
 
