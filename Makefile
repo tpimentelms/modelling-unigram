@@ -1,4 +1,4 @@
-LANGUAGE := yo
+LANGUAGE := fi
 ALPHA := 0.5
 BETA := 1
 MAX_TRAIN_TOKENS := 700000
@@ -13,13 +13,16 @@ CHECKPOINT_DIR_LANG := $(CHECKPOINT_DIR_BASE)/$(LANGUAGE)
 RESULTS_DIR_BASE := ./results
 RESULTS_DIR_LANG := $(RESULTS_DIR_BASE)/$(LANGUAGE)
 
-XML_NAME := $(LANGUAGE)wiki-latest-pages-articles.xml.bz2
-WIKIURL := https://dumps.wikimedia.org/$(LANGUAGE)wiki/latest/$(XML_NAME)
-JSON_NAME := wiki-latest.json.gz
+# XML_NAME := $(LANGUAGE)wiki-latest-pages-articles.xml.bz2
+# WIKIURL := https://dumps.wikimedia.org/$(LANGUAGE)wiki/latest/$(XML_NAME)
+# JSON_NAME := wiki-latest.json.gz
 
-XML_FILE := $(WIKI_DIR)/$(XML_NAME)
-JSON_FILE := $(WIKI_DIR)/$(JSON_NAME)
-TOKENIZED_FILE := $(WIKI_DIR)/parsed.txt
+# XML_FILE := $(WIKI_DIR)/$(XML_NAME)
+# JSON_FILE := $(WIKI_DIR)/$(JSON_NAME)
+
+TOKENIZED_FILE := data/$(LANGUAGE).txt
+FILTERED_FILE := data/$(LANGUAGE)-filtered.txt
+# TOKENIZED_FILE := $(WIKI_DIR)/parsed.txt
 PROCESSED_DATA_FILE := $(DATA_DIR_LANG)/processed.pckl
 
 CHECKPOINT_TYPE_PATH := $(CHECKPOINT_DIR_LANG)/types_$(MAX_TRAIN_TOKENS)
@@ -138,38 +141,38 @@ $(CHECKPOINT_SENTENCE_FILE): $(PROCESSED_DATA_FILE)
 	python src/h02_learn/train_generator.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_SENTENCE_PATH) --dataset sentences --max-train-tokens $(MAX_TRAIN_TOKENS)
 
 # Preprocess Data
-$(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)
+$(FILTERED_FILE): $(TOKENIZED_FILE)
 	echo "Process data"
-	python src/h01_data/process_data.py --wikipedia-tokenized-file $(TOKENIZED_FILE) --data-file $(PROCESSED_DATA_FILE) --language $(LANGUAGE)
+	python src/h01_data/filter_data.py --input-file $(TOKENIZED_FILE) --output-file $(PROCESSED_DATA_FILE) --language $(LANGUAGE)
 
-# Tokenize wikipedia
-$(TOKENIZED_FILE): $(JSON_FILE)
-	echo "Tokenize data"
-	python src/h01_data/tokenizer.py --wikipedia-raw-file $(JSON_FILE) --wikipedia-tokenized-file $(TOKENIZED_FILE) --dump-size 10000 --language $(LANGUAGE)
+# # Tokenize wikipedia
+# $(TOKENIZED_FILE): $(JSON_FILE)
+# 	echo "Tokenize data"
+# 	python src/h01_data/tokenizer.py --wikipedia-raw-file $(JSON_FILE) --wikipedia-tokenized-file $(TOKENIZED_FILE) --dump-size 10000 --language $(LANGUAGE)
 
-# Preprocess wikipedia to json
-$(JSON_FILE): $(XML_FILE)
-	echo "Parse to JSON data"
-	python -m gensim.scripts.segment_wiki -i -f $(XML_FILE) -o $(JSON_FILE)
+# # Preprocess wikipedia to json
+# $(JSON_FILE): $(XML_FILE)
+# 	echo "Parse to JSON data"
+# 	python -m gensim.scripts.segment_wiki -i -f $(XML_FILE) -o $(JSON_FILE)
 
-# Get wikipedia
-$(XML_FILE):
-	echo "Get wiki data"
-	mkdir -p $(WIKI_DIR)
-	wget -P $(WIKI_DIR) $(WIKIURL)
+# # Get wikipedia
+# $(XML_FILE):
+# 	echo "Get wiki data"
+# 	mkdir -p $(WIKI_DIR)
+# 	wget -P $(WIKI_DIR) $(WIKIURL)
 
-tune_hyperparameters: $(PROCESSED_DATA_FILE) $(CHECKPOINT_TYPE_FILE)
-	mkdir -p $(CHECKPOINT_DIR_LANG)/hyperparam_tuning
-	mkdir -p $(RESULTS_DIR_LANG)
-	python -u src/h02_learn/tune_pitman_yor.py --results-file $(RESULTS_DIR_LANG)/hyperparam_tuning_results --two-stage-state-folder $(CHECKPOINT_DIR_LANG)/hyperparam_tuning \
-			--data-file $(PROCESSED_DATA_FILE) --max-train-tokens $(MAX_TRAIN_TOKENS) --generator-path $(CHECKPOINT_TYPE_PATH) --no-iterations $(TUNING_ITERATIONS)
+# tune_hyperparameters: $(PROCESSED_DATA_FILE) $(CHECKPOINT_TYPE_FILE)
+# 	mkdir -p $(CHECKPOINT_DIR_LANG)/hyperparam_tuning
+# 	mkdir -p $(RESULTS_DIR_LANG)
+# 	python -u src/h02_learn/tune_pitman_yor.py --results-file $(RESULTS_DIR_LANG)/hyperparam_tuning_results --two-stage-state-folder $(CHECKPOINT_DIR_LANG)/hyperparam_tuning \
+# 			--data-file $(PROCESSED_DATA_FILE) --max-train-tokens $(MAX_TRAIN_TOKENS) --generator-path $(CHECKPOINT_TYPE_PATH) --no-iterations $(TUNING_ITERATIONS)
 
-calculate_avg_sentence_len: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
-	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE) --results-file $(RESULTS_DIR_LANG)/average_sentence_lengths.csv
-	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE) --results-file $(RESULTS_DIR_LANG)/average_sentence_lengths.csv
+# calculate_avg_sentence_len: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
+# 	mkdir -p $(RESULTS_DIR_LANG)
+# 	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE) --results-file $(RESULTS_DIR_LANG)/average_sentence_lengths.csv
+# 	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE) --results-file $(RESULTS_DIR_LANG)/average_sentence_lengths.csv
 
-calculate_surprisals: $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
-	mkdir -p $(RESULTS_DIR_LANG)
-	python src/visualisations/entropy_frequency.py --max-train-tokens $(MAX_TRAIN_TOKENS) --data-language-dir $(DATA_DIR_LANG) --checkpoint-language-dir $(CHECKPOINT_DIR_LANG)\
-			--alpha $(ALPHA) --beta $(BETA) --results-folder $(RESULTS_DIR_LANG)
+# calculate_surprisals: $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
+# 	mkdir -p $(RESULTS_DIR_LANG)
+# 	python src/visualisations/entropy_frequency.py --max-train-tokens $(MAX_TRAIN_TOKENS) --data-language-dir $(DATA_DIR_LANG) --checkpoint-language-dir $(CHECKPOINT_DIR_LANG)\
+# 			--alpha $(ALPHA) --beta $(BETA) --results-folder $(RESULTS_DIR_LANG)
