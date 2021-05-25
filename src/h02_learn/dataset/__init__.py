@@ -5,7 +5,6 @@ from util import constants
 from util import util
 from .types import TypeDataset
 from .tokens import TokenDataset
-from .sentences import SentenceDataset
 
 
 def generate_batch(batch):
@@ -45,8 +44,6 @@ def get_data_cls(data_type):
         return TypeDataset
     if data_type == 'tokens':
         return TokenDataset
-    if data_type == 'sentences':
-        return SentenceDataset
     raise ValueError('Invalid data requested %s' % data_type)
 
 

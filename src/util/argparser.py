@@ -15,7 +15,7 @@ def add_optimisation_args(parser):
 
 def add_data_args(parser):
     # Data defaults
-    parser.add_argument('--max-train-tokens', type=int)
+    # parser.add_argument('--max-train-tokens', type=int)
     parser.add_argument('--data-file', type=str, required=True)
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--dataset', type=str)

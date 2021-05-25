@@ -113,7 +113,7 @@ def main():
 
     trainloader, devloader, _, alphabet = get_data_loaders_with_folds(
         args.dataset, args.data_file, folds,
-        args.batch_size, max_train_tokens=args.max_train_tokens)
+        args.batch_size)
 
     print('Train size: %d Dev size: %d ' %
           (len(trainloader.dataset), len(devloader.dataset)))
