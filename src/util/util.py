@@ -7,10 +7,12 @@ from collections import defaultdict
 import numpy as np
 import torch
 
+
 def get_folds():
     # define training set, development set and test set respectively
     # folds range from 0 to 9
     return [list(range(8)), [8], [9]]
+
 
 def config(seed):
     np.random.seed(seed)
@@ -22,10 +24,12 @@ def write_csv(filename, results):
         writer = csv.writer(f, delimiter=',')
         writer.writerows(results)
 
+
 def overwrite_csv(filename, results):
     with io.open(filename, 'w', encoding='utf8') as f:
         writer = csv.writer(f, delimiter=',')
         writer.writerows(results)
+
 
 def write_data(filename, embeddings):
     with open(filename, "wb") as f:
@@ -75,6 +79,10 @@ def get_dirs(filepath):
                  for f in os.listdir(filepath)
                  if os.path.isdir(os.path.join(filepath, f))]
     return sorted(filenames)
+
+
+def is_file(fname):
+    return os.path.isfile(fname)
 
 
 def mkdir(folder):
