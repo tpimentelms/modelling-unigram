@@ -8,8 +8,10 @@
 
 import string
 
+
 def get_latin_base():
     return string.ascii_lowercase
+
 
 def get_character_set(language):
     character_sets = {

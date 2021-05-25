@@ -46,9 +46,10 @@ def get_fold_splits(n_sentences, n_folds, max_sentences=None):
     splits = {x: i for i, fold in enumerate(splits) for x in fold}
     return splits
 
+
 def is_allowed(word, char_set):
-    #return word.isalpha()
     return all([char in char_set for char in word.lower()])
+
 
 def process_line(line, word_info, sentence_list, alphabet, language):
     character_set = get_character_set(language)
