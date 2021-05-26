@@ -111,9 +111,10 @@ def main():
     args = get_args()
     folds = util.get_folds()
 
+    max_tokens = [None, 50000, None]  # Limit dev set
     trainloader, devloader, _, alphabet = get_data_loaders_with_folds(
         args.dataset, args.data_file, folds,
-        args.batch_size)
+        args.batch_size, args.batch_size_eval, max_tokens=max_tokens)
 
     print('Train size: %d Dev size: %d ' %
           (len(trainloader.dataset), len(devloader.dataset)))
