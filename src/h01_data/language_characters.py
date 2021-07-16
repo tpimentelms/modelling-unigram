@@ -7,13 +7,16 @@
 """
 
 import string
+from nltk.corpus import words
+
 
 def get_latin_base():
     return string.ascii_lowercase
 
+
 def get_character_set(language):
     character_sets = {
-        'en': get_latin_base(),
+        'en': get_latin_base() + '\'-',
         'fi': get_latin_base() + 'äåöäåöššžž',
         'yo': get_latin_base() + 'áàāéèēẹe̩ẹ́é̩ẹ̀è̩ẹ̄ē̩íìīóòōọo̩ọ́ó̩ọ̀ò̩ọ̄ō̩úùūṣs̩',
         'he': 'אבגדהוזחטיךכלםמןנסעףפץצקרשת',

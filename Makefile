@@ -1,4 +1,4 @@
-LANGUAGE := fi
+LANGUAGE := en
 ALPHA := 0.5
 BETA := 1
 MAX_TRAIN_TOKENS := 700000
@@ -19,8 +19,10 @@ RESULTS_DIR_LANG := $(RESULTS_DIR_BASE)/$(LANGUAGE)
 
 # XML_FILE := $(WIKI_DIR)/$(XML_NAME)
 # JSON_FILE := $(WIKI_DIR)/$(JSON_NAME)
-TOKENIZED_FILE := $(DATA_DIR)/$(LANGUAGE).txt
-PROCESSED_DATA_FILE := $(DATA_DIR)/$(LANGUAGE)-processed.pckl
+TEST_FNAME := $(LANGUAGE)-test
+TOKENIZED_FILE := $(DATA_DIR)/raw/$(LANGUAGE).txt
+PROCESSED_DATA_FILE := $(DATA_DIR)/processed/$(LANGUAGE).pckl
+TEST_FILE := $(DATA_DIR)/raw/$(TEST_FNAME).txt
 
 CHECKPOINT_TYPE_PATH := $(CHECKPOINT_DIR_LANG)/types
 CHECKPOINT_TYPE_FILE := $(CHECKPOINT_TYPE_PATH)/model.tch
@@ -34,6 +36,7 @@ CHECKPOINT_TYPE_FILE := $(CHECKPOINT_TYPE_PATH)/model.tch
 # STRING_ALPHA = $(subst $(DOT),$(UNDERSCORE),$(ALPHA))
 # STRING_BETA = $(subst $(DOT),$(UNDERSCORE),$(BETA))
 TWO_STAGE_INIT_TYPE_STATE_FOLDER := $(CHECKPOINT_DIR_LANG)/two_stage
+CHECKPOINT_TWO_STAGE_FILE := $(TWO_STAGE_INIT_TYPE_STATE_FOLDER)/model.tch
 # TWO_STAGE_INIT_TOKEN_STATE_FOLDER := $(CHECKPOINT_DIR_LANG)/two_stage_init_token_$(STRING_ALPHA)_$(STRING_BETA)_$(MAX_TRAIN_TOKENS)
 GENERATOR_RESULTS_FILE := $(RESULTS_DIR_LANG)/lstm_results.csv
 # training results files
@@ -42,11 +45,12 @@ TWO_STAGE_TYPE_TRAINING_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_training_ini
 # evaluation results files
 TWO_STAGE_INIT_TYPE_ON_TOKEN_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluation_init_type_on_token.csv
 TWO_STAGE_INIT_TYPE_ON_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluation_init_type_on_type.csv
+TEST_RESULTS_FILE :=  $(RESULTS_DIR_LANG)/$(TEST_FNAME).csv
 # TWO_STAGE_INIT_TOKEN_ON_TOKEN_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluation_init_token_on_token.csv
 # TWO_STAGE_INIT_TOKEN_ON_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluation_init_token_on_type.csv
 
 
-all: process_data train_generator train_two_stage eval_generator eval_two_stage calculate_surprisal calculate_average_sentence_length
+all: process_data train_generator train_two_stage eval_generator eval_two_stage
 
 eval_two_stage: run_two_stage_type_evaluation
 	echo "Finished evaluating two-stage model" $(LANGUAGE)
@@ -54,7 +58,7 @@ eval_two_stage: run_two_stage_type_evaluation
 eval_generator: evaluate_generator
 	echo "Finished evaluating generator" $(LANGUAGE)
 
-train_two_stage: run_two_stage_type_training
+train_two_stage: $(CHECKPOINT_TWO_STAGE_FILE)
 	echo "Finished training two-stage model" $(LANGUAGE)
 
 train_generator: $(CHECKPOINT_TYPE_FILE)
@@ -75,6 +79,9 @@ clean:
 # calculate_surprisal: calculate_surprisals
 # 	echo "Finished calculating surprisals for" $(LANGUAGE)
 
+get_test_probs: $(CHECKPOINT_TWO_STAGE_FILE)
+	python src/h03_eval/calculate_test_probs.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER)\
+			--test-file $(TEST_FILE) --results-file $(TEST_RESULTS_FILE) --batch-size 64 --dataset types
 
 # Eval two-stage model
 run_two_stage_type_evaluation: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
@@ -83,9 +90,6 @@ run_two_stage_type_evaluation: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_ST
 	echo "Evaluate two-stage model initialised with a type generator"
 	python3 src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER)\
 			--adaptor-results-file $(TWO_STAGE_INIT_TYPE_ON_TYPE_RESULTS_FILE) --batch-size 64 --dataset types
-	echo "Evaluate two-stage model initialised with a token generator"
-	python3 src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER)\
-			--adaptor-results-file $(TWO_STAGE_INIT_TOKEN_ON_TYPE_RESULTS_FILE) --batch-size 64 --dataset types
 
 # # Eval two-stage model
 # run_two_stage_token_evaluation: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
@@ -99,7 +103,7 @@ run_two_stage_type_evaluation: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_ST
 # 			--adaptor-results-file $(TWO_STAGE_INIT_TOKEN_ON_TOKEN_RESULTS_FILE) --batch-size 64 --dataset tokens
 
 # Train two-stage model initialising with types
-run_two_stage_type_training: $(CHECKPOINT_TYPE_FILE)
+$(CHECKPOINT_TWO_STAGE_FILE): $(CHECKPOINT_TYPE_FILE)
 	echo "Train two-stage model" $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(TWO_STAGE_INIT_TYPE_STATE_FOLDER)
 	mkdir -p $(RESULTS_DIR_LANG)
@@ -141,7 +145,8 @@ $(CHECKPOINT_TYPE_FILE): $(PROCESSED_DATA_FILE)
 # Preprocess Data
 $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)
 	echo "Process data"
-	python src/h01_data/process_data.py --wikipedia-tokenized-file $(TOKENIZED_FILE) --data-file $(PROCESSED_DATA_FILE) --language $(LANGUAGE)
+	mkdir -p $(DATA_DIR)/processed/
+	python src/h01_data/process_data.py --tokenized-file $(TOKENIZED_FILE) --data-file $(PROCESSED_DATA_FILE) --language $(LANGUAGE)
 
 # # Tokenize wikipedia
 # $(TOKENIZED_FILE): $(JSON_FILE)

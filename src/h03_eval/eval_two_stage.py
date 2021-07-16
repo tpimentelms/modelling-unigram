@@ -37,7 +37,7 @@ def main():
     folds = util.get_folds()
 
     trainloader, devloader, testloader, _ = \
-        get_data_loaders_with_folds(args.dataset, args.data_file, folds, args.batch_size)
+        get_data_loaders_with_folds(args.dataset, args.data_file, folds, args.batch_size, args.batch_size_eval)
     print('Train size: %d Dev size: %d Test size: %d' %
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 

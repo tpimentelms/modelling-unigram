@@ -58,7 +58,7 @@ def main():
 
     dataloaders = {
         dataset: get_data_loaders_with_folds(dataset, args.data_file, folds,\
-                                             args.batch_size)
+                                             args.batch_size, args.batch_size_eval)
         for dataset in datasets
     }
     for dataset, dataloader in dataloaders.items():

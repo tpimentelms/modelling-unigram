@@ -6,7 +6,8 @@ class Alphabet:
         self._chars2idx = {
             'PAD': 0,
             'SOS': 1,
-            'EOS': 2
+            'EOS': 2,
+            'UNK': 3,
         }
         self._idx2chars = {idx: char for char, idx in self._chars2idx.items()}
         self._updated = True
