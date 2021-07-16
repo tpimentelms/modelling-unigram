@@ -81,8 +81,17 @@ def calculate_two_stage_type_probs(words, adaptor, generator, alphabet):
 
         # TODO: Remove this try/catch
         try:
+            word = word.replace('\'', '')
+            word = word.replace('-', '')
+            word = word.replace('.', '')
+            word = word.replace(',', '')
+            word = word.replace('`', '')
+            if word == '':
+                continue
             logprob = calculate_word_logprobability(word, adaptor, generator, alphabet)
         except KeyError:
+            # if not any(str(i) in word for i in range(10)):
+            #     import ipdb; ipdb.set_trace()
             continue
         type_logprobs[word] = logprob
     return type_logprobs
